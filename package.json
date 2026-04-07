@@ -1,0 +1,22 @@
+{
+  "name": "closerflow-ai",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@11.12.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @closerflow/web",
+    "build": "npm run build --workspace @closerflow/web",
+    "lint": "npm run lint --workspace @closerflow/web",
+    "typecheck": "npm run typecheck --workspace @closerflow/web && npm run typecheck --workspace @closerflow/db && npm run typecheck --workspace @closerflow/types && npm run typecheck --workspace @closerflow/ui",
+    "db:generate": "npm run prisma:generate --workspace @closerflow/db",
+    "db:migrate": "npm run prisma:migrate --workspace @closerflow/db",
+    "postinstall": "npm run db:generate"
+  },
+  "dependencies": {
+    "twilio": "^5.13.1"
+  }
+}

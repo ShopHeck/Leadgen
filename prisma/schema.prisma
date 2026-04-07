@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum QualificationStatus {
+  HOT
+  WARM
+  NURTURE
+  DISQUALIFIED
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("starter")
+  niche     String?
+  leads     Lead[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id                  String              @id @default(cuid())
+  workspaceId         String
+  firstName           String
+  lastName            String?
+  email               String
+  phone               String
+  source              String?
+  medium              String?
+  campaign            String?
+  serviceInterest     String?
+  leadScore           Int                 @default(0)
+  qualificationStatus QualificationStatus @default(NURTURE)
+  lifecycleStage      String              @default("NEW")
+  notes               String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  workspace           Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}

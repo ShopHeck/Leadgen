@@ -1,0 +1,327 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String              @id @default(cuid())
+  email        String              @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  memberships  WorkspaceMember[]
+  assignedLeads Lead[]             @relation("AssignedLeadUser")
+  leadStageChanges LeadStageHistory[] @relation("LeadStageChangedByUser")
+  leadNotes LeadNote[]
+}
+
+model Workspace {
+  id             String             @id @default(cuid())
+  name           String
+  slug           String             @unique
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  members        WorkspaceMember[]
+  leads          Lead[]
+  funnels        Funnel[]
+  pipelines      Pipeline[]
+  automations    Automation[]
+  formSubmissions FormSubmission[]
+  leadStageHistory LeadStageHistory[]
+  leadNotes LeadNote[]
+  messages       Message[]
+}
+
+model WorkspaceMember {
+  id          String         @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole  @default(ADMIN)
+  createdAt   DateTime       @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model Lead {
+  id             String            @id @default(cuid())
+  workspaceId    String
+  name           String
+  email          String?
+  phone          String?
+  source         String?
+  campaign       String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  utmTerm        String?
+  utmContent     String?
+  leadScore      Int               @default(0)
+  scoreBand      LeadScoreBand     @default(NURTURE)
+  scoringReasonsJson Json?
+  lastScoredAt   DateTime?
+  status         LeadStatus        @default(NEW)
+  assignedUserId String?
+  pipelineStageId String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assignedUser     User?             @relation("AssignedLeadUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  pipelineStage    PipelineStage?    @relation("CurrentPipelineStage", fields: [pipelineStageId], references: [id], onDelete: SetNull)
+  formSubmissions  FormSubmission[]
+  messages         Message[]
+  appointments     Appointment[]
+  revenueEvents    RevenueEvent[]
+  stageHistory     LeadStageHistory[]
+  notes            LeadNote[]
+
+  @@index([workspaceId, createdAt])
+  @@index([assignedUserId])
+  @@index([pipelineStageId])
+}
+
+model Funnel {
+  id          String        @id @default(cuid())
+  workspaceId String
+  name        String
+  slug        String
+  status      FunnelStatus  @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  formSubmissions FormSubmission[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+}
+
+model FormSubmission {
+  id          String   @id @default(cuid())
+  workspaceId String
+  funnelId    String?
+  leadId      String?
+  payloadJson Json
+  utmJson     Json?
+  pageUrl     String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  funnel    Funnel?   @relation(fields: [funnelId], references: [id], onDelete: SetNull)
+  lead      Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([leadId])
+}
+
+model Pipeline {
+  id          String          @id @default(cuid())
+  workspaceId String
+  name        String
+  isDefault   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  stages    PipelineStage[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, isDefault])
+}
+
+model PipelineStage {
+  id          String   @id @default(cuid())
+  pipelineId  String
+  name        String
+  orderIndex  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  leads    Lead[]   @relation("CurrentPipelineStage")
+  fromStageHistory LeadStageHistory[] @relation("LeadStageHistoryFrom")
+  toStageHistory   LeadStageHistory[] @relation("LeadStageHistoryTo")
+
+  @@unique([pipelineId, orderIndex])
+  @@unique([pipelineId, name])
+}
+
+model LeadStageHistory {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  leadId          String
+  fromStageId     String?
+  toStageId       String?
+  changedByUserId String?
+  createdAt       DateTime       @default(now())
+
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lead           Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromStage      PipelineStage? @relation("LeadStageHistoryFrom", fields: [fromStageId], references: [id], onDelete: SetNull)
+  toStage        PipelineStage? @relation("LeadStageHistoryTo", fields: [toStageId], references: [id], onDelete: SetNull)
+  changedByUser  User?          @relation("LeadStageChangedByUser", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([leadId, createdAt])
+}
+
+model LeadNote {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  leadId       String
+  authorUserId String?
+  body         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  author    User?     @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([leadId, createdAt])
+}
+
+model Message {
+  id               String            @id @default(cuid())
+  workspaceId      String
+  leadId           String
+  channel          MessageChannel
+  direction        MessageDirection
+  subject          String?
+  body             String
+  fromAddress      String?
+  toAddress        String?
+  provider         MessageProvider?
+  providerMessageId String?
+  errorMessage     String?
+  metadataJson     Json?
+  status           MessageStatus     @default(QUEUED)
+  sentAt           DateTime?
+  deliveredAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([leadId, createdAt])
+  @@index([workspaceId, channel, createdAt])
+}
+
+model Automation {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  triggerType    String
+  conditionsJson Json
+  actionsJson    Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, triggerType])
+}
+
+model Appointment {
+  id        String             @id @default(cuid())
+  leadId    String
+  startAt   DateTime
+  status    AppointmentStatus  @default(SCHEDULED)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, startAt])
+}
+
+model RevenueEvent {
+  id        String             @id @default(cuid())
+  leadId    String
+  amount    Decimal            @db.Decimal(12, 2)
+  status    RevenueEventStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+enum WorkspaceRole {
+  ADMIN
+  MEMBER
+}
+
+enum LeadStatus {
+  NEW
+  ATTEMPTING_CONTACT
+  QUALIFIED
+  CONTACTED
+  BOOKED
+  CONFIRMED
+  SHOWED
+  WON
+  LOST
+  NURTURE
+}
+
+enum LeadScoreBand {
+  HOT
+  WARM
+  NURTURE
+}
+
+enum FunnelStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum MessageChannel {
+  SMS
+  EMAIL
+}
+
+enum MessageProvider {
+  TWILIO
+  RESEND
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum RevenueEventStatus {
+  PENDING
+  CONFIRMED
+  REFUNDED
+}
