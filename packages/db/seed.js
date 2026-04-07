@@ -98,6 +98,38 @@ async function ensureDefaultPipeline(workspaceId) {
   return pipeline;
 }
 
+async function ensureAutomationSeed(workspaceId) {
+  const existing = await prisma.automation.findFirst({
+    where: {
+      workspaceId,
+      name: "Hot lead instant SMS",
+    },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.automation.create({
+    data: {
+      workspaceId,
+      name: "Hot lead instant SMS",
+      triggerType: "lead.scored",
+      conditionsJson: {
+        minScore: 80,
+        scoreBand: "HOT",
+      },
+      actionsJson: [
+        {
+          type: "send_sms",
+          body: "Hi {{leadName}}, thanks for reaching out. We saw your request and can help you book today.",
+        },
+      ],
+      maxRetries: 3,
+    },
+  });
+}
+
 async function ensureLead({
   workspaceId,
   assignedUserId,
@@ -214,6 +246,32 @@ async function ensureLead({
     }
   }
 
+  if (lead.appointment) {
+    const appointmentCount = await prisma.appointment.count({
+      where: {
+        workspaceId,
+        leadId: record.id,
+      },
+    });
+
+    if (appointmentCount === 0) {
+      await prisma.appointment.create({
+        data: {
+          workspaceId,
+          leadId: record.id,
+          provider: lead.appointment.provider,
+          externalEventId: lead.appointment.externalEventId,
+          startAt: lead.appointment.startAt,
+          endAt: lead.appointment.endAt,
+          inviteeName: lead.appointment.inviteeName,
+          inviteeEmail: lead.appointment.inviteeEmail,
+          notes: lead.appointment.notes,
+          status: lead.appointment.status,
+        },
+      });
+    }
+  }
+
   return record;
 }
 
@@ -292,6 +350,7 @@ async function main() {
   }
 
   const pipeline = await ensureDefaultPipeline(workspace.id);
+  await ensureAutomationSeed(workspace.id);
   const stageByName = Object.fromEntries(pipeline.stages.map((stage) => [stage.name, stage]));
 
   const leads = [
@@ -411,6 +470,16 @@ async function main() {
         { label: "Engagement", points: 15, reason: "Lead engagement signals: phone captured, form supplied multiple answers." },
       ],
       note: "Prep financing comparison before consult.",
+      appointment: {
+        provider: "CALENDLY",
+        externalEventId: "seed-calendly-morgan",
+        startAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        endAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+        inviteeName: "Morgan Lee",
+        inviteeEmail: "morgan@northvalesolar.com",
+        notes: "Design consult booked from Calendly.",
+        status: "SCHEDULED",
+      },
     },
     {
       name: "Casey Nguyen",

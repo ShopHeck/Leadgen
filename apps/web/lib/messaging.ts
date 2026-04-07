@@ -1,4 +1,5 @@
 import { MessageChannel, MessageProvider, MessageStatus, prisma } from "@closerflow/db";
+import { emitAutomationEvent } from "./automations";
 import twilio from "twilio";
 
 type SendLeadMessageInput = {
@@ -157,6 +158,15 @@ export async function sendLeadMessage({
         toAddress: delivery.toAddress,
         metadataJson: delivery.metadataJson,
         sentAt: new Date(),
+      },
+    });
+
+    await emitAutomationEvent({
+      workspaceId,
+      eventType: "message.sent",
+      payload: {
+        leadId,
+        channel: updated.channel,
       },
     });
 

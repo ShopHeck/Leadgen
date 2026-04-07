@@ -1,6 +1,7 @@
 import { prisma } from "@closerflow/db";
-import { createLeadNoteAction, sendLeadMessageAction } from "../../../../../app/actions";
+import { createAppointmentAction, createLeadNoteAction, sendLeadMessageAction } from "../../../../../app/actions";
 import { LeadAiScorePanel } from "../../../../../components/lead-ai-score-panel";
+import { LeadBookingForm } from "../../../../../components/lead-booking-form";
 import { LeadMessageForm } from "../../../../../components/lead-message-form";
 import { LeadNoteForm } from "../../../../../components/lead-note-form";
 import { requireWorkspaceMembership } from "../../../../../lib/auth-guards";
@@ -78,11 +79,17 @@ export default async function LeadDetailPage({
           createdAt: "desc",
         },
       },
+      appointments: {
+        orderBy: {
+          startAt: "asc",
+        },
+      },
     },
   });
 
   const noteAction = createLeadNoteAction.bind(null, workspaceSlug, lead.id);
   const messageAction = sendLeadMessageAction.bind(null, workspaceSlug, lead.id);
+  const bookingAction = createAppointmentAction.bind(null, workspaceSlug, lead.id);
 
   const activity: ActivityItem[] = [
     {
@@ -108,6 +115,12 @@ export default async function LeadDetailPage({
       title: `${message.channel} ${message.direction.toLowerCase()}`,
       description: `${message.status}${message.toAddress ? ` to ${message.toAddress}` : ""}${message.errorMessage ? ` · ${message.errorMessage}` : ""}`,
       createdAt: message.createdAt,
+    })),
+    ...lead.appointments.map((appointment) => ({
+      id: `appointment-${appointment.id}`,
+      title: "Booking created",
+      description: `${appointment.status} · ${formatDate(appointment.startAt)}${appointment.inviteeEmail ? ` · ${appointment.inviteeEmail}` : ""}.`,
+      createdAt: appointment.createdAt,
     })),
     ...lead.stageHistory.map((entry) => ({
       id: `stage-${entry.id}`,
@@ -201,6 +214,39 @@ export default async function LeadDetailPage({
             </div>
             <div className="mt-5">
               <LeadMessageForm action={messageAction} email={lead.email} phone={lead.phone} />
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Booking</h3>
+              <span className="text-sm text-slate-500">{lead.appointments.length} appointments</span>
+            </div>
+            <div className="mt-5">
+              <LeadBookingForm action={bookingAction} defaultName={lead.name} defaultEmail={lead.email} />
+            </div>
+            <div className="mt-5 space-y-3">
+              {lead.appointments.map((appointment) => (
+                <div key={appointment.id} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="rounded-full bg-white/5 px-2.5 py-1 text-slate-200">{appointment.provider}</span>
+                      <span className="rounded-full border border-white/10 px-2.5 py-1 text-slate-300">{appointment.status}</span>
+                    </div>
+                    <p className="text-xs text-slate-500">{formatDate(appointment.startAt)}</p>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-300">
+                    {appointment.inviteeName || lead.name}
+                    {appointment.inviteeEmail ? ` · ${appointment.inviteeEmail}` : ""}
+                  </p>
+                  {appointment.notes ? <p className="mt-3 text-sm leading-7 text-slate-300">{appointment.notes}</p> : null}
+                </div>
+              ))}
+              {lead.appointments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-slate-900/50 p-4 text-sm text-slate-500">
+                  No appointments recorded yet.
+                </div>
+              ) : null}
             </div>
           </div>
 

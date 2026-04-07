@@ -63,6 +63,18 @@ export default async function CrmPage({
             >
               Message log
             </Link>
+            <Link
+              href={`/app/${workspaceSlug}/automations`}
+              className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            >
+              Automations
+            </Link>
+            <Link
+              href={`/app/${workspaceSlug}/bookings`}
+              className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            >
+              Bookings
+            </Link>
           </div>
         </div>
       </section>

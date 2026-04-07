@@ -1,6 +1,6 @@
 import { prisma } from "@closerflow/db";
 import { auth } from "../../../../../../auth";
-import { ensureDefaultPipelineForWorkspace, mapStageNameToLeadStatus } from "../../../../../../lib/crm";
+import { ensureDefaultPipelineForWorkspace, moveLeadToStage } from "../../../../../../lib/crm";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -68,25 +68,14 @@ export async function POST(
       return NextResponse.json({ ok: true }, { status: 200 });
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
-        where: { id: lead.id },
-        data: {
-          pipelineStageId: targetStage.id,
-          status: mapStageNameToLeadStatus(targetStage.name),
-        },
-      });
-
-      await tx.leadStageHistory.create({
-        data: {
-          workspaceId: membership.workspaceId,
-          leadId: lead.id,
-          fromStageId: lead.pipelineStageId,
-          toStageId: targetStage.id,
-          changedByUserId: session.user.id,
-        },
-      });
-    });
+    await prisma.$transaction((tx) =>
+      moveLeadToStage(tx, {
+        workspaceId: membership.workspaceId,
+        leadId: lead.id,
+        toStageId: targetStage.id,
+        changedByUserId: session.user.id,
+      }),
+    );
 
     revalidatePath(`/app/${workspaceSlug}/crm`);
     revalidatePath(`/app/${workspaceSlug}/leads/${lead.id}`);
