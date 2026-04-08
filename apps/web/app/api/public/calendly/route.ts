@@ -1,5 +1,6 @@
 import { prisma, AppointmentStatus } from "@closerflow/db";
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { z } from "zod";
 import { createOrUpdateAppointment } from "../../../../lib/bookings";
 
@@ -37,9 +38,60 @@ function resolveWorkspaceSlug(request: NextRequest, payload: z.infer<typeof cale
   return request.nextUrl.searchParams.get("workspaceSlug") || payload.tracking?.workspaceSlug || null;
 }
 
+function verifyCalendlySignature(rawBody: string, signatureHeader: string | null) {
+  const signingKey = process.env.CALENDLY_WEBHOOK_SIGNING_KEY;
+
+  if (!signingKey) {
+    throw new Error("Calendly signing key is not configured.");
+  }
+
+  if (!signatureHeader) {
+    return false;
+  }
+
+  const timestampMatch = signatureHeader.match(/t=([^,]+)/);
+  const signatureMatch = signatureHeader.match(/v1=([a-f0-9]+)/i);
+
+  if (!timestampMatch || !signatureMatch) {
+    return false;
+  }
+
+  const timestamp = timestampMatch[1];
+  const providedSignature = signatureMatch[1];
+
+  if (!/^\d+$/.test(timestamp)) {
+    return false;
+  }
+
+  const timestampMs = Number(timestamp) * 1000;
+  const maxSkewMs = 5 * 60 * 1000;
+
+  if (Math.abs(Date.now() - timestampMs) > maxSkewMs) {
+    return false;
+  }
+
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const expectedSignature = crypto.createHmac("sha256", signingKey).update(signedPayload).digest("hex");
+  const providedBuffer = Buffer.from(providedSignature.toLowerCase(), "hex");
+  const expectedBuffer = Buffer.from(expectedSignature, "hex");
+
+  if (providedBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(providedBuffer, expectedBuffer);
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const input = calendlyWebhookSchema.parse(await request.json());
+    const rawBody = await request.text();
+    const signatureHeader = request.headers.get("Calendly-Webhook-Signature");
+
+    if (!verifyCalendlySignature(rawBody, signatureHeader)) {
+      return NextResponse.json({ error: "Invalid Calendly webhook signature." }, { status: 401 });
+    }
+
+    const input = calendlyWebhookSchema.parse(JSON.parse(rawBody));
     const workspaceSlug = resolveWorkspaceSlug(request, input.payload);
     const inviteeEmail = input.payload.invitee?.email || input.payload.email || null;
 

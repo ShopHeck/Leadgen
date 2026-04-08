@@ -208,6 +208,7 @@ export async function processAutomationRun(runId: string) {
             leadId: run.leadId,
             channel: MessageChannel.SMS,
             body: interpolate(action.body, context),
+            emitMessageSentEvent: false,
           });
           break;
         case "send_email":
@@ -217,6 +218,7 @@ export async function processAutomationRun(runId: string) {
             channel: MessageChannel.EMAIL,
             subject: interpolate(action.subject, context),
             body: interpolate(action.body, context),
+            emitMessageSentEvent: false,
           });
           break;
         case "add_note":
