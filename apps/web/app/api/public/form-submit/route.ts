@@ -2,6 +2,7 @@ import { prisma } from "@closerflow/db";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ensureDefaultPipelineForWorkspace, mapStageNameToLeadStatus } from "../../../../lib/crm";
+import { sendLeadMessage } from "../../../../lib/messaging";
 import { scoreAndPersistLead } from "../../../../lib/scoring";
 
 const publicLeadSchema = z.object({
@@ -184,13 +185,56 @@ export async function POST(request: NextRequest) {
       return { lead, submission };
     });
 
+    const scoring = await scoreAndPersistLead(result.lead.id);
+
+    const outreachErrors: string[] = [];
+
+    if (scoring.band === "HOT") {
+      const smsResult = await sendLeadMessage({
+        workspaceId: workspace.id,
+        leadId: result.lead.id,
+        channel: "SMS",
+        body: "Thanks for reaching out — we can prioritize your request right away. Reply YES for a fast follow-up.",
+      }).catch((error) => {
+        outreachErrors.push(error instanceof Error ? error.message : "Unable to send HOT SMS.");
+        return null;
+      });
+
+      await sendLeadMessage({
+        workspaceId: workspace.id,
+        leadId: result.lead.id,
+        channel: "EMAIL",
+        subject: "Quick next step",
+        body:
+          smsResult
+            ? "You were just sent a priority SMS. Reply there or email back and we can get your next step moving today."
+            : "We reviewed your submission and can help quickly. Reply to this email and we can start today.",
+      }).catch((error) => {
+        outreachErrors.push(error instanceof Error ? error.message : "Unable to send HOT email.");
+      });
+    } else if (scoring.band === "WARM") {
+      await sendLeadMessage({
+        workspaceId: workspace.id,
+        leadId: result.lead.id,
+        channel: "EMAIL",
+        subject: "Thanks for your submission",
+        body: "Thanks for your submission. Share your top priority and preferred timeline, and we will follow up with the best next step.",
+      }).catch((error) => {
+        outreachErrors.push(error instanceof Error ? error.message : "Unable to send WARM email.");
+      });
+    }
+
     return NextResponse.json(
       {
         ok: true,
         leadId: result.lead.id,
         submissionId: result.submission.id,
         workspaceId: workspace.id,
-        scoring: await scoreAndPersistLead(result.lead.id),
+        scoring,
+        outreach: {
+          attempted: scoring.band === "HOT" || scoring.band === "WARM",
+          errors: outreachErrors,
+        },
       },
       { status: 201 },
     );
