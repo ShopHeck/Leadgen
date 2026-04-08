@@ -18,7 +18,7 @@ Monorepo scaffold for an AI-powered lead capture, qualification, nurture, bookin
 
 ## Current scope
 
-This repo currently includes Tasks 1 through 5 from `tasks/codex-tasks.md`:
+This repo currently includes Tasks 1 through 8 from `tasks/codex-tasks.md`:
 
 - monorepo scaffold with Next.js, TypeScript, Tailwind, and Prisma
 - Auth.js credential auth with signup, signin, and protected `/app` routes
@@ -27,3 +27,6 @@ This repo currently includes Tasks 1 through 5 from `tasks/codex-tasks.md`:
 - UTM-aware lead ingestion into `Lead` and `FormSubmission`
 - CRM board with stage history, lead notes, and lead detail pages
 - deterministic lead scoring plus protected AI score analysis endpoint
+- Twilio/Resend messaging with lead-level and workspace-level message logs
+- event-based automations with runs and retry handling
+- manual and Calendly-driven booking capture with appointment tracking

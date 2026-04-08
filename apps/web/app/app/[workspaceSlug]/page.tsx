@@ -51,10 +51,22 @@ export default async function WorkspacePage({
               Open CRM board
             </Link>
             <Link
+              href={`/app/${workspace.slug}/automations`}
+              className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            >
+              Automations
+            </Link>
+            <Link
               href={`/app/${workspace.slug}/messages`}
               className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
             >
               View messages
+            </Link>
+            <Link
+              href={`/app/${workspace.slug}/bookings`}
+              className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            >
+              View bookings
             </Link>
           </div>
         </div>

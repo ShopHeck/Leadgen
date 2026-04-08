@@ -1,6 +1,7 @@
 import { prisma } from "@closerflow/db";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { emitAutomationEvent } from "../../../../lib/automations";
 import { ensureDefaultPipelineForWorkspace, mapStageNameToLeadStatus } from "../../../../lib/crm";
 import { scoreAndPersistLead } from "../../../../lib/scoring";
 
@@ -182,6 +183,15 @@ export async function POST(request: NextRequest) {
       });
 
       return { lead, submission };
+    });
+
+    await emitAutomationEvent({
+      workspaceId: workspace.id,
+      eventType: "lead.created",
+      payload: {
+        leadId: result.lead.id,
+        source: result.lead.utmSource || result.lead.source,
+      },
     });
 
     return NextResponse.json(

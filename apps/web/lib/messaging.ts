@@ -1,4 +1,5 @@
 import { MessageChannel, MessageProvider, MessageStatus, prisma } from "@closerflow/db";
+import { emitAutomationEvent } from "./automations";
 import twilio from "twilio";
 
 type SendLeadMessageInput = {
@@ -7,6 +8,7 @@ type SendLeadMessageInput = {
   channel: MessageChannel;
   body: string;
   subject?: string | null;
+  emitMessageSentEvent?: boolean;
 };
 
 type SendLeadMessageResult = {
@@ -96,6 +98,7 @@ export async function sendLeadMessage({
   channel,
   body,
   subject,
+  emitMessageSentEvent = true,
 }: SendLeadMessageInput): Promise<SendLeadMessageResult> {
   const lead = await prisma.lead.findFirst({
     where: {
@@ -159,6 +162,17 @@ export async function sendLeadMessage({
         sentAt: new Date(),
       },
     });
+
+    if (emitMessageSentEvent) {
+      await emitAutomationEvent({
+        workspaceId,
+        eventType: "message.sent",
+        payload: {
+          leadId,
+          channel: updated.channel,
+        },
+      });
+    }
 
     return {
       messageId: updated.id,

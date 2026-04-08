@@ -1,4 +1,5 @@
 import { prisma, Prisma } from "@closerflow/db";
+import { emitAutomationEvent } from "./automations";
 
 export type LeadScoreBandValue = "HOT" | "WARM" | "NURTURE";
 
@@ -17,6 +18,7 @@ export type LeadScoreResult = {
 
 type LeadContext = {
   id: string;
+  workspaceId: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -252,6 +254,17 @@ export async function scoreAndPersistLead(leadId: string) {
     new Date(),
     lead.id,
   );
+
+  await emitAutomationEvent({
+    workspaceId: lead.workspaceId,
+    eventType: "lead.scored",
+    payload: {
+      leadId: lead.id,
+      score: result.score,
+      scoreBand: result.band,
+      source: lead.utmSource || lead.source,
+    },
+  });
 
   return result;
 }

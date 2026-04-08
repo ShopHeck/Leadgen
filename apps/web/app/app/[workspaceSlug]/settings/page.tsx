@@ -34,24 +34,35 @@ export default async function WorkspaceSettingsPage({
   });
 
   return (
-    <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-      <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Admin settings</p>
-      <h2 className="mt-2 text-3xl font-semibold">{membership.workspace.name}</h2>
-      <p className="mt-3 text-sm text-slate-400">Current member roster and role assignments.</p>
-      <div className="mt-6 space-y-3">
-        {members.map((member) => (
-          <div key={member.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <div>
-              <p className="font-medium text-white">{member.user.email}</p>
-              <p className="text-sm text-slate-400">
-                {[member.user.firstName, member.user.lastName].filter(Boolean).join(" ") || "No profile name"}
-              </p>
+    <div className="space-y-6">
+      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Admin settings</p>
+        <h2 className="mt-2 text-3xl font-semibold">{membership.workspace.name}</h2>
+        <p className="mt-3 text-sm text-slate-400">Current member roster and role assignments.</p>
+        <div className="mt-6 space-y-3">
+          {members.map((member) => (
+            <div key={member.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <div>
+                <p className="font-medium text-white">{member.user.email}</p>
+                <p className="text-sm text-slate-400">
+                  {[member.user.firstName, member.user.lastName].filter(Boolean).join(" ") || "No profile name"}
+                </p>
+              </div>
+              <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
+                {member.role}
+              </span>
             </div>
-            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-              {member.role}
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Calendly webhook</p>
+        <h3 className="mt-2 text-xl font-semibold">Workspace booking endpoint</h3>
+        <p className="mt-3 text-sm leading-7 text-slate-400">
+          Use this webhook URL for Calendly invitee events. Pass the workspace slug so bookings resolve to the correct tenant and lead.
+        </p>
+        <pre className="mt-5 overflow-x-auto rounded-2xl bg-slate-950 p-4 text-xs leading-6 text-slate-300">{`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/calendly?workspaceSlug=${membership.workspace.slug}`}</pre>
       </div>
     </div>
   );

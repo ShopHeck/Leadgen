@@ -33,10 +33,12 @@ model Workspace {
   funnels        Funnel[]
   pipelines      Pipeline[]
   automations    Automation[]
+  automationRuns AutomationRun[]
   formSubmissions FormSubmission[]
   leadStageHistory LeadStageHistory[]
   leadNotes LeadNote[]
   messages       Message[]
+  appointments   Appointment[]
 }
 
 model WorkspaceMember {
@@ -85,6 +87,7 @@ model Lead {
   revenueEvents    RevenueEvent[]
   stageHistory     LeadStageHistory[]
   notes            LeadNote[]
+  automationRuns   AutomationRun[]
 
   @@index([workspaceId, createdAt])
   @@index([assignedUserId])
@@ -224,28 +227,70 @@ model Message {
 model Automation {
   id             String   @id @default(cuid())
   workspaceId    String
+  name           String
   triggerType    String
   conditionsJson Json
   actionsJson    Json
+  isActive       Boolean  @default(true)
+  maxRetries     Int      @default(3)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  runs      AutomationRun[]
 
   @@index([workspaceId, triggerType])
 }
 
+model AutomationRun {
+  id             String              @id @default(cuid())
+  automationId   String
+  workspaceId    String
+  leadId         String?
+  eventType      String
+  payloadJson    Json?
+  status         AutomationRunStatus @default(PENDING)
+  attemptCount   Int                 @default(0)
+  maxAttempts    Int                 @default(3)
+  lastError      String?
+  nextRetryAt    DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  automation Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lead       Lead?      @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status, nextRetryAt])
+  @@index([automationId, createdAt])
+  @@index([leadId, createdAt])
+}
+
 model Appointment {
   id        String             @id @default(cuid())
+  workspaceId String
   leadId    String
+  provider  AppointmentProvider @default(MANUAL)
+  externalEventId String?
   startAt   DateTime
+  endAt     DateTime?
+  inviteeName String?
+  inviteeEmail String?
+  calendlyEventUri String?
+  calendlyInviteeUri String?
+  notes     String?
   status    AppointmentStatus  @default(SCHEDULED)
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
 
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
+  @@index([workspaceId, startAt])
   @@index([leadId, startAt])
+  @@index([externalEventId])
 }
 
 model RevenueEvent {
@@ -315,9 +360,23 @@ enum MessageStatus {
 
 enum AppointmentStatus {
   SCHEDULED
+  CONFIRMED
   COMPLETED
   CANCELLED
   NO_SHOW
+}
+
+enum AppointmentProvider {
+  MANUAL
+  CALENDLY
+}
+
+enum AutomationRunStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  RETRY_SCHEDULED
+  FAILED
 }
 
 enum RevenueEventStatus {

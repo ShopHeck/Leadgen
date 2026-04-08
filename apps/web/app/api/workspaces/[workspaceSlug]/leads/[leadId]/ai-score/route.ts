@@ -4,6 +4,7 @@ import { buildFallbackAiScore, computeLeadScore, scoreAndPersistLead } from "../
 import { NextResponse } from "next/server";
 
 async function buildOpenAiScoreSummary(lead: {
+  workspaceId: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -120,6 +121,7 @@ export async function GET(
     },
     select: {
       id: true,
+      workspaceId: true,
       name: true,
       email: true,
       phone: true,

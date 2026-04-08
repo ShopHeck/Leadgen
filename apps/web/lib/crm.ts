@@ -39,6 +39,111 @@ export function mapStageNameToLeadStatus(stageName: string): LeadStatus {
 
 type PrismaClientLike = typeof prisma | Prisma.TransactionClient;
 
+export async function findWorkspaceStageByName(db: PrismaClientLike, workspaceId: string, stageName: string) {
+  const { pipeline } = await ensureDefaultPipelineForWorkspace(db, workspaceId);
+
+  return db.pipelineStage.findFirst({
+    where: {
+      pipelineId: pipeline.id,
+      name: stageName,
+    },
+  });
+}
+
+export async function moveLeadToStage(
+  db: PrismaClientLike,
+  {
+    workspaceId,
+    leadId,
+    toStageId,
+    changedByUserId,
+  }: {
+    workspaceId: string;
+    leadId: string;
+    toStageId: string;
+    changedByUserId?: string | null;
+  },
+) {
+  const lead = await db.lead.findFirst({
+    where: {
+      id: leadId,
+      workspaceId,
+    },
+    select: {
+      id: true,
+      pipelineStageId: true,
+    },
+  });
+
+  if (!lead) {
+    throw new Error("Lead not found.");
+  }
+
+  if (lead.pipelineStageId === toStageId) {
+    return lead;
+  }
+
+  const targetStage = await db.pipelineStage.findUnique({
+    where: {
+      id: toStageId,
+    },
+  });
+
+  if (!targetStage) {
+    throw new Error("Target stage not found.");
+  }
+
+  await db.lead.update({
+    where: {
+      id: lead.id,
+    },
+    data: {
+      pipelineStageId: targetStage.id,
+      status: mapStageNameToLeadStatus(targetStage.name),
+    },
+  });
+
+  await db.leadStageHistory.create({
+    data: {
+      workspaceId,
+      leadId: lead.id,
+      fromStageId: lead.pipelineStageId,
+      toStageId: targetStage.id,
+      changedByUserId: changedByUserId ?? null,
+    },
+  });
+
+  return lead;
+}
+
+export async function moveLeadToStageByName(
+  db: PrismaClientLike,
+  {
+    workspaceId,
+    leadId,
+    stageName,
+    changedByUserId,
+  }: {
+    workspaceId: string;
+    leadId: string;
+    stageName: string;
+    changedByUserId?: string | null;
+  },
+) {
+  const stage = await findWorkspaceStageByName(db, workspaceId, stageName);
+
+  if (!stage) {
+    throw new Error(`Stage "${stageName}" not found.`);
+  }
+
+  return moveLeadToStage(db, {
+    workspaceId,
+    leadId,
+    toStageId: stage.id,
+    changedByUserId,
+  });
+}
+
 export async function ensureDefaultPipelineForWorkspace(db: PrismaClientLike, workspaceId: string) {
   let pipeline = await db.pipeline.findFirst({
     where: {
