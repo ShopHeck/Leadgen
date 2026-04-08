@@ -1,6 +1,7 @@
-import { prisma, WorkspaceRole } from "@closerflow/db";
+import { prisma, WorkspacePlan, WorkspaceRole } from "@closerflow/db";
 import { redirect } from "next/navigation";
 import { auth } from "../auth";
+import { WorkspaceFeature, hasWorkspaceFeature } from "./billing";
 
 export async function requireSessionUser() {
   const session = await auth();
@@ -47,4 +48,13 @@ export async function requireWorkspaceRole(workspaceSlug: string, role: Workspac
   }
 
   return membership;
+}
+
+export async function requireWorkspaceFeature(workspaceSlug: string, feature: WorkspaceFeature) {
+  const membership = await requireWorkspaceMembership(workspaceSlug);
+
+  return {
+    membership,
+    enabled: hasWorkspaceFeature(membership.workspace.plan as WorkspacePlan, feature),
+  };
 }

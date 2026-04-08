@@ -9,6 +9,7 @@ type SendLeadMessageInput = {
   body: string;
   subject?: string | null;
   emitMessageSentEvent?: boolean;
+  aiGenerated?: boolean;
 };
 
 type SendLeadMessageResult = {
@@ -99,6 +100,7 @@ export async function sendLeadMessage({
   body,
   subject,
   emitMessageSentEvent = true,
+  aiGenerated,
 }: SendLeadMessageInput): Promise<SendLeadMessageResult> {
   const lead = await prisma.lead.findFirst({
     where: {
@@ -138,6 +140,7 @@ export async function sendLeadMessage({
       subject: channel === MessageChannel.EMAIL ? normalizedSubject : null,
       body: normalizedBody,
       toAddress,
+      aiGenerated: aiGenerated ?? false,
       status: MessageStatus.QUEUED,
     },
   });

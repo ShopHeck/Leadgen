@@ -45,8 +45,14 @@ export default async function WorkspacePage({
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              href={`/app/${workspace.slug}/crm`}
+              href={`/app/${workspace.slug}/dashboard`}
               className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href={`/app/${workspace.slug}/crm`}
+              className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
             >
               Open CRM board
             </Link>
@@ -67,6 +73,18 @@ export default async function WorkspacePage({
               className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
             >
               View bookings
+            </Link>
+            <Link
+              href={`/app/${workspace.slug}/conversations`}
+              className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            >
+              Conversations
+            </Link>
+            <Link
+              href={`/app/${workspace.slug}/billing`}
+              className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+            >
+              Billing
             </Link>
           </div>
         </div>

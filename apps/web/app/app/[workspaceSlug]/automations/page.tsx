@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@closerflow/db";
 import { createAutomationAction, processAutomationRunsAction } from "../../../../app/actions";
-import { requireWorkspaceRole } from "../../../../lib/auth-guards";
+import { requireWorkspaceFeature, requireWorkspaceRole } from "../../../../lib/auth-guards";
 
 function formatDate(value: Date | null) {
   if (!value) {
@@ -21,6 +21,7 @@ export default async function WorkspaceAutomationsPage({
 }) {
   const { workspaceSlug } = await params;
   const membership = await requireWorkspaceRole(workspaceSlug, "ADMIN");
+  const feature = await requireWorkspaceFeature(workspaceSlug, "automations");
 
   if (!membership) {
     return (
@@ -30,6 +31,21 @@ export default async function WorkspaceAutomationsPage({
         <p className="mt-3 max-w-xl text-sm leading-7 text-rose-50/80">
           Automation triggers, outbound actions, and retry controls are limited to workspace admins.
         </p>
+      </div>
+    );
+  }
+
+  if (!feature.enabled) {
+    return (
+      <div className="rounded-[28px] border border-amber-500/20 bg-amber-500/10 p-8 text-amber-100">
+        <p className="text-sm uppercase tracking-[0.24em] text-amber-200/70">Upgrade required</p>
+        <h2 className="mt-3 text-2xl font-semibold">Automations are available on the Pro plan and above.</h2>
+        <p className="mt-3 max-w-xl text-sm leading-7 text-amber-50/80">
+          Upgrade this workspace to unlock event-based workflows, retries, and AI-assisted follow-up triggers.
+        </p>
+        <Link href={`/app/${workspaceSlug}/billing`} className="mt-6 inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200">
+          Open billing
+        </Link>
       </div>
     );
   }

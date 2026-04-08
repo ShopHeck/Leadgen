@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { signIn, signOut } from "../auth";
 import { requireSessionUser, requireWorkspaceRole } from "../lib/auth-guards";
 import { processDueAutomationRuns } from "../lib/automations";
+import { hasWorkspaceFeature } from "../lib/billing";
 import { createOrUpdateAppointment } from "../lib/bookings";
 import { ensureDefaultPipelineForWorkspace } from "../lib/crm";
 import { sendLeadMessage } from "../lib/messaging";
@@ -263,6 +264,10 @@ export async function createAutomationAction(workspaceSlug: string, formData: Fo
     redirect(`/app/${workspaceSlug}/automations?error=forbidden`);
   }
 
+  if (!hasWorkspaceFeature(membership.workspace.plan, "automations")) {
+    redirect(`/app/${workspaceSlug}/billing?upgrade=automations`);
+  }
+
   const name = String(formData.get("name") ?? "").trim();
   const triggerType = String(formData.get("triggerType") ?? "").trim();
   const actionType = String(formData.get("actionType") ?? "").trim();
@@ -341,6 +346,10 @@ export async function processAutomationRunsAction(workspaceSlug: string) {
     redirect(`/app/${workspaceSlug}/automations?error=forbidden`);
   }
 
+  if (!hasWorkspaceFeature(membership.workspace.plan, "automations")) {
+    redirect(`/app/${workspaceSlug}/billing?upgrade=automations`);
+  }
+
   await processDueAutomationRuns(membership.workspaceId);
   revalidatePath(`/app/${workspaceSlug}/automations`);
   redirect(`/app/${workspaceSlug}/automations`);
@@ -404,4 +413,31 @@ export async function createAppointmentAction(workspaceSlug: string, leadId: str
   revalidatePath(`/app/${workspaceSlug}/bookings`);
   revalidatePath(`/app/${workspaceSlug}/crm`);
   redirect(`/app/${workspaceSlug}/leads/${leadId}`);
+}
+
+export async function updateAiAutopilotAction(workspaceSlug: string, formData: FormData) {
+  const membership = await requireWorkspaceRole(workspaceSlug, "ADMIN");
+
+  if (!membership) {
+    redirect(`/app/${workspaceSlug}/settings?error=forbidden`);
+  }
+
+  if (!hasWorkspaceFeature(membership.workspace.plan, "ai_conversations")) {
+    redirect(`/app/${workspaceSlug}/billing?upgrade=ai`);
+  }
+
+  const enabled = String(formData.get("enabled") ?? "") === "true";
+
+  await prisma.workspace.update({
+    where: {
+      id: membership.workspaceId,
+    },
+    data: {
+      aiAutopilotEnabled: enabled,
+    },
+  });
+
+  revalidatePath(`/app/${workspaceSlug}/settings`);
+  revalidatePath(`/app/${workspaceSlug}/conversations`);
+  redirect(`/app/${workspaceSlug}/settings`);
 }

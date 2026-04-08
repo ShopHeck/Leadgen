@@ -17,6 +17,7 @@
     "postinstall": "npm run db:generate"
   },
   "dependencies": {
+    "stripe": "^22.0.1",
     "twilio": "^5.13.1"
   }
 }

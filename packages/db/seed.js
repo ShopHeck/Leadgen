@@ -238,8 +238,29 @@ async function ensureLead({
             providerMessageId: message.providerMessageId,
             fromAddress: message.fromAddress,
             toAddress: message.toAddress,
+            aiGenerated: Boolean(message.aiGenerated),
             sentAt: new Date(),
             metadataJson: message.metadataJson || null,
+          },
+        });
+      }
+    }
+  }
+
+  if (Array.isArray(lead.revenueEvents) && lead.revenueEvents.length > 0) {
+    const revenueCount = await prisma.revenueEvent.count({
+      where: {
+        leadId: record.id,
+      },
+    });
+
+    if (revenueCount === 0) {
+      for (const event of lead.revenueEvents) {
+        await prisma.revenueEvent.create({
+          data: {
+            leadId: record.id,
+            amount: event.amount,
+            status: event.status,
           },
         });
       }
@@ -317,12 +338,18 @@ async function main() {
         },
         data: {
           name: "Demo CloserFlow Workspace",
+          plan: "PRO",
+          subscriptionStatus: "ACTIVE",
+          aiAutopilotEnabled: true,
         },
       })
     : await prisma.workspace.create({
         data: {
           name: "Demo CloserFlow Workspace",
           slug: "demo-closerflow",
+          plan: "PRO",
+          subscriptionStatus: "ACTIVE",
+          aiAutopilotEnabled: true,
           members: {
             create: {
               userId: user.id,
@@ -393,7 +420,25 @@ async function main() {
           providerMessageId: "seed-twilio-jordan",
           fromAddress: "+15555550999",
           toAddress: "+15555550101",
+          aiGenerated: true,
           metadataJson: { seeded: true },
+        },
+        {
+          channel: "SMS",
+          direction: "INBOUND",
+          body: "Tomorrow after 2 works. Can we lock that in?",
+          status: "DELIVERED",
+          provider: "TWILIO",
+          providerMessageId: "seed-twilio-jordan-inbound",
+          fromAddress: "+15555550101",
+          toAddress: "+15555550999",
+          metadataJson: { seeded: true },
+        },
+      ],
+      revenueEvents: [
+        {
+          amount: "12000.00",
+          status: "CONFIRMED",
         },
       ],
     },
@@ -440,6 +485,12 @@ async function main() {
           metadataJson: { seeded: true },
         },
       ],
+      revenueEvents: [
+        {
+          amount: "6500.00",
+          status: "CONFIRMED",
+        },
+      ],
     },
     {
       name: "Morgan Lee",
@@ -480,6 +531,12 @@ async function main() {
         notes: "Design consult booked from Calendly.",
         status: "SCHEDULED",
       },
+      revenueEvents: [
+        {
+          amount: "18000.00",
+          status: "PENDING",
+        },
+      ],
     },
     {
       name: "Casey Nguyen",

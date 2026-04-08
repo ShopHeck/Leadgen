@@ -48,3 +48,8 @@
 ## Task 10: Billing
 - Stripe subscriptions
 - plan gating
+
+## Task 11: Inbound AI Conversations
+- Twilio inbound webhook
+- AI auto-replies
+- conversation inbox

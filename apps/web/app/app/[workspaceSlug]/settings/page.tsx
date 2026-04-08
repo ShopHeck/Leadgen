@@ -1,5 +1,8 @@
 import { prisma } from "@closerflow/db";
+import Link from "next/link";
+import { updateAiAutopilotAction } from "../../../../app/actions";
 import { requireWorkspaceRole } from "../../../../lib/auth-guards";
+import { hasWorkspaceFeature } from "../../../../lib/billing";
 
 export default async function WorkspaceSettingsPage({
   params,
@@ -32,6 +35,8 @@ export default async function WorkspaceSettingsPage({
       createdAt: "asc",
     },
   });
+  const aiAutopilotAction = updateAiAutopilotAction.bind(null, workspaceSlug);
+  const aiEnabled = hasWorkspaceFeature(membership.workspace.plan, "ai_conversations");
 
   return (
     <div className="space-y-6">
@@ -63,6 +68,37 @@ export default async function WorkspaceSettingsPage({
           Use this webhook URL for Calendly invitee events. Pass the workspace slug so bookings resolve to the correct tenant and lead.
         </p>
         <pre className="mt-5 overflow-x-auto rounded-2xl bg-slate-950 p-4 text-xs leading-6 text-slate-300">{`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/calendly?workspaceSlug=${membership.workspace.slug}`}</pre>
+      </div>
+
+      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Twilio inbound</p>
+        <h3 className="mt-2 text-xl font-semibold">Conversation webhook and autopilot</h3>
+        <p className="mt-3 text-sm leading-7 text-slate-400">
+          Use this webhook URL for inbound SMS. When AI autopilot is enabled on an eligible plan, inbound SMS replies can be summarized and answered automatically.
+        </p>
+        <pre className="mt-5 overflow-x-auto rounded-2xl bg-slate-950 p-4 text-xs leading-6 text-slate-300">{`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/twilio/inbound?workspaceSlug=${membership.workspace.slug}`}</pre>
+        {aiEnabled ? (
+          <form action={aiAutopilotAction} className="mt-5 flex flex-wrap items-center gap-3">
+            <input type="hidden" name="enabled" value={membership.workspace.aiAutopilotEnabled ? "false" : "true"} />
+            <button
+              type="submit"
+              className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200"
+            >
+              {membership.workspace.aiAutopilotEnabled ? "Disable AI autopilot" : "Enable AI autopilot"}
+            </button>
+            <span className="text-sm text-slate-400">
+              Current state: {membership.workspace.aiAutopilotEnabled ? "enabled" : "disabled"}
+            </span>
+          </form>
+        ) : (
+          <div className="mt-5 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+            AI autopilot is available on the Pro plan and above.{" "}
+            <Link href={`/app/${workspaceSlug}/billing`} className="underline underline-offset-4">
+              Upgrade this workspace
+            </Link>
+            .
+          </div>
+        )}
       </div>
     </div>
   );
