@@ -1,5 +1,5 @@
 import { prisma } from "@closerflow/db";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { ensureDefaultPipelineForWorkspace, mapStageNameToLeadStatus } from "../../../../lib/crm";
 import { sendLeadMessage } from "../../../../lib/messaging";
@@ -182,45 +182,56 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return { lead, submission };
+      return { lead, submission, isNewLead: !existingLead };
     });
 
     const scoring = await scoreAndPersistLead(result.lead.id);
 
-    const outreachErrors: string[] = [];
+    // Only attempt outreach for brand-new leads to prevent repeated sends for
+    // the same contact and to limit the blast radius of unauthenticated requests.
+    const shouldAttemptOutreach = result.isNewLead && (scoring.band === "HOT" || scoring.band === "WARM");
 
-    if (scoring.band === "HOT") {
-      const smsResult = await sendLeadMessage({
-        workspaceId: workspace.id,
-        leadId: result.lead.id,
-        channel: "SMS",
-        body: "Thanks for reaching out — we can prioritize your request right away. Reply YES for a fast follow-up.",
-      }).catch((error) => {
-        outreachErrors.push(error instanceof Error ? error.message : "Unable to send HOT SMS.");
-        return null;
-      });
+    if (shouldAttemptOutreach) {
+      const leadId = result.lead.id;
+      const workspaceId = workspace.id;
+      const band = scoring.band;
 
-      await sendLeadMessage({
-        workspaceId: workspace.id,
-        leadId: result.lead.id,
-        channel: "EMAIL",
-        subject: "Quick next step",
-        body:
-          smsResult
-            ? "You were just sent a priority SMS. Reply there or email back and we can get your next step moving today."
-            : "We reviewed your submission and can help quickly. Reply to this email and we can start today.",
-      }).catch((error) => {
-        outreachErrors.push(error instanceof Error ? error.message : "Unable to send HOT email.");
-      });
-    } else if (scoring.band === "WARM") {
-      await sendLeadMessage({
-        workspaceId: workspace.id,
-        leadId: result.lead.id,
-        channel: "EMAIL",
-        subject: "Thanks for your submission",
-        body: "Thanks for your submission. Share your top priority and preferred timeline, and we will follow up with the best next step.",
-      }).catch((error) => {
-        outreachErrors.push(error instanceof Error ? error.message : "Unable to send WARM email.");
+      // Decouple outreach from the response so provider latency does not affect
+      // the caller.  Errors are logged server-side only — never exposed publicly.
+      after(async () => {
+        if (band === "HOT") {
+          const smsResult = await sendLeadMessage({
+            workspaceId,
+            leadId,
+            channel: "SMS",
+            body: "Thanks for reaching out — we can prioritize your request right away. Reply YES for a fast follow-up.",
+          }).catch((error) => {
+            console.error("HOT SMS outreach failed", { workspaceId, leadId }, error);
+            return null;
+          });
+
+          await sendLeadMessage({
+            workspaceId,
+            leadId,
+            channel: "EMAIL",
+            subject: "Quick next step",
+            body: smsResult
+              ? "You were just sent a priority SMS. Reply there or email back and we can get your next step moving today."
+              : "We reviewed your submission and can help quickly. Reply to this email and we can start today.",
+          }).catch((error) => {
+            console.error("HOT email outreach failed", { workspaceId, leadId }, error);
+          });
+        } else if (band === "WARM") {
+          await sendLeadMessage({
+            workspaceId,
+            leadId,
+            channel: "EMAIL",
+            subject: "Thanks for your submission",
+            body: "Thanks for your submission. Share your top priority and preferred timeline, and we will follow up with the best next step.",
+          }).catch((error) => {
+            console.error("WARM email outreach failed", { workspaceId, leadId }, error);
+          });
+        }
       });
     }
 
@@ -232,8 +243,7 @@ export async function POST(request: NextRequest) {
         workspaceId: workspace.id,
         scoring,
         outreach: {
-          attempted: scoring.band === "HOT" || scoring.band === "WARM",
-          errors: outreachErrors,
+          attempted: shouldAttemptOutreach,
         },
       },
       { status: 201 },
