@@ -5,7 +5,9 @@ import { loadEnvConfig } from "@next/env";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
-const repoBasePath = "/Leadgen";
+const repositoryName = process.env.GITHUB_REPOSITORY?.split("/")[1];
+const defaultPagesBasePath = repositoryName ? `/${repositoryName}` : "/Leadgen";
+const repoBasePath = process.env.GITHUB_PAGES_BASE_PATH || defaultPagesBasePath;
 
 // In this monorepo, the shared runtime env lives at the repo root.
 loadEnvConfig(path.join(currentDir, "../.."));
