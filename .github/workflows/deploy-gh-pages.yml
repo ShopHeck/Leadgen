@@ -1,0 +1,61 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-gh-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      PAGES_OUTPUT_DIR: ${{ runner.temp }}/leadgen-pages
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build monorepo app
+        env:
+          GITHUB_PAGES: "true"
+          GITHUB_PAGES_BASE_PATH: "/Leadgen"
+        run: npm run build
+
+      - name: Prepare static files for GitHub Pages
+        run: |
+          rm -rf "${PAGES_OUTPUT_DIR}"
+          mkdir -p "${PAGES_OUTPUT_DIR}/_next"
+
+          test -f apps/web/.next/server/app/index.html || (echo "Missing Next.js app index output" && exit 1)
+          test -f apps/web/.next/server/pages/404.html || (echo "Missing Next.js 404 output" && exit 1)
+          test -d apps/web/.next/static || (echo "Missing Next.js static assets" && exit 1)
+
+          cp apps/web/.next/server/app/index.html "${PAGES_OUTPUT_DIR}/index.html"
+          cp apps/web/.next/server/pages/404.html "${PAGES_OUTPUT_DIR}/404.html"
+          cp -R apps/web/.next/static "${PAGES_OUTPUT_DIR}/_next/static"
+          touch "${PAGES_OUTPUT_DIR}/.nojekyll"
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ${{ env.PAGES_OUTPUT_DIR }}
+          force_orphan: true
