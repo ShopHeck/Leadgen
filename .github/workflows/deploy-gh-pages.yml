@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-gh-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build monorepo app
+        env:
+          GITHUB_PAGES: "true"
+        run: npm run build
+
+      - name: Prepare static files for GitHub Pages
+        run: |
+          rm -rf /tmp/leadgen-pages
+          mkdir -p /tmp/leadgen-pages/_next
+
+          cp apps/web/.next/server/app/index.html /tmp/leadgen-pages/index.html
+          cp apps/web/.next/server/pages/404.html /tmp/leadgen-pages/404.html
+          cp -R apps/web/.next/static /tmp/leadgen-pages/_next/static
+          touch /tmp/leadgen-pages/.nojekyll
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: /tmp/leadgen-pages
+          force_orphan: true
