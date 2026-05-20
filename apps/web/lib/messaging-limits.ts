@@ -1,5 +1,5 @@
 import { MessageChannel, prisma } from "@closerflow/db";
-import { getPlanLimits, PLAN_CONFIG } from "./billing";
+import { getPlanLimits } from "./billing";
 
 /**
  * Daily messaging cost guardrails per workspace.
