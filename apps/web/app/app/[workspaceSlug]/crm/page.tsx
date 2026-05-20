@@ -75,6 +75,12 @@ export default async function CrmPage({
             >
               Bookings
             </Link>
+            <Link
+              href={`/app/${workspaceSlug}/analytics`}
+              className="inline-flex rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+            >
+              Analytics
+            </Link>
           </div>
         </div>
       </section>

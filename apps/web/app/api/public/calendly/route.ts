@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { z } from "zod";
 import { createOrUpdateAppointment } from "../../../../lib/bookings";
+import { checkRateLimit, getClientIp, RATE_LIMITS, rateLimitResponse } from "../../../../lib/rate-limit";
 
 const calendlyWebhookSchema = z.object({
   event: z.string().min(1),
@@ -84,6 +85,13 @@ function verifyCalendlySignature(rawBody: string, signatureHeader: string | null
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIp = getClientIp(request);
+    const rateLimitResult = checkRateLimit(clientIp, RATE_LIMITS.calendlyWebhook);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResponse(rateLimitResult);
+    }
+
     const rawBody = await request.text();
     const signatureHeader = request.headers.get("Calendly-Webhook-Signature");
 

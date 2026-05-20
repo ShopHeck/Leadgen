@@ -18,6 +18,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <Link href="/app" className="block rounded-xl px-3 py-2 transition hover:bg-white/10">
               Workspaces
             </Link>
+            <Link href="/app/agency" className="block rounded-xl px-3 py-2 transition hover:bg-white/10">
+              Agency
+            </Link>
             <div className="rounded-xl border border-dashed border-white/10 px-3 py-3 text-xs uppercase tracking-[0.2em] text-slate-500">
               Open a workspace to reach CRM
             </div>

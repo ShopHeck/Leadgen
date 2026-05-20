@@ -20,14 +20,49 @@ model User {
   assignedLeads Lead[]             @relation("AssignedLeadUser")
   leadStageChanges LeadStageHistory[] @relation("LeadStageChangedByUser")
   leadNotes LeadNote[]
+  organizationMemberships OrganizationMember[]
+}
+
+model Organization {
+  id              String               @id @default(cuid())
+  name            String
+  slug            String               @unique
+  logoUrl         String?
+  brandColor      String?              @default("#6366f1")
+  customDomain    String?              @unique
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  members         OrganizationMember[]
+  workspaces      Workspace[]          @relation("OrganizationWorkspaces")
+
+  @@index([slug])
+}
+
+model OrganizationMember {
+  id             String              @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole    @default(MEMBER)
+  createdAt      DateTime            @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
 }
 
 model Workspace {
   id             String             @id @default(cuid())
   name           String
   slug           String             @unique
+  organizationId String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
+
+  organization   Organization?      @relation("OrganizationWorkspaces", fields: [organizationId], references: [id], onDelete: SetNull)
   members        WorkspaceMember[]
   leads          Lead[]
   funnels        Funnel[]
@@ -39,6 +74,7 @@ model Workspace {
   leadNotes LeadNote[]
   messages       Message[]
   appointments   Appointment[]
+  apiKeys        ApiKey[]
 }
 
 model WorkspaceMember {
@@ -383,4 +419,27 @@ enum RevenueEventStatus {
   PENDING
   CONFIRMED
   REFUNDED
+}
+
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  keyHash     String   @unique
+  prefix      String
+  lastUsedAt  DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([keyHash])
 }

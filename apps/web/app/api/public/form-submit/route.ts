@@ -2,7 +2,9 @@ import { prisma } from "@closerflow/db";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { emitAutomationEvent } from "../../../../lib/automations";
+import { isAiFollowUpEnabled, sendAiInstantFollowUp } from "../../../../lib/ai-followup";
 import { ensureDefaultPipelineForWorkspace, mapStageNameToLeadStatus } from "../../../../lib/crm";
+import { checkRateLimit, getClientIp, RATE_LIMITS, rateLimitResponse } from "../../../../lib/rate-limit";
 import { scoreAndPersistLead } from "../../../../lib/scoring";
 
 const publicLeadSchema = z.object({
@@ -67,6 +69,13 @@ async function parseRequest(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: prevent abuse on public endpoint
+    const clientIp = getClientIp(request);
+    const rateLimitResult = checkRateLimit(clientIp, RATE_LIMITS.formSubmit);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResponse(rateLimitResult);
+    }
+
     const input = await parseRequest(request);
 
     const workspace = await prisma.workspace.findUnique({
@@ -194,6 +203,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // AI Instant Follow-Up: send personalized message within seconds of capture
+    let aiFollowUp = null;
+    const followUpEnabled = await isAiFollowUpEnabled(workspace.id);
+    if (followUpEnabled) {
+      aiFollowUp = await sendAiInstantFollowUp(result.lead.id);
+    }
+
     return NextResponse.json(
       {
         ok: true,
@@ -201,6 +217,9 @@ export async function POST(request: NextRequest) {
         submissionId: result.submission.id,
         workspaceId: workspace.id,
         scoring: await scoreAndPersistLead(result.lead.id),
+        aiFollowUp: aiFollowUp
+          ? { channel: aiFollowUp.channel, generatedByAi: aiFollowUp.generatedByAi }
+          : null,
       },
       { status: 201 },
     );

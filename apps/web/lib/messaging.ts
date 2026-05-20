@@ -1,5 +1,6 @@
 import { MessageChannel, MessageProvider, MessageStatus, prisma } from "@closerflow/db";
 import { emitAutomationEvent } from "./automations";
+import { checkMessagingLimit } from "./messaging-limits";
 import twilio from "twilio";
 
 type SendLeadMessageInput = {
@@ -127,6 +128,14 @@ export async function sendLeadMessage({
 
   if (!toAddress) {
     throw new Error(channel === MessageChannel.SMS ? "Lead does not have a phone number." : "Lead does not have an email address.");
+  }
+
+  // Check daily messaging limits before sending
+  const limitCheck = await checkMessagingLimit(workspaceId, channel);
+  if (!limitCheck.allowed) {
+    throw new Error(
+      `Daily ${channel} limit reached (${limitCheck.used}/${limitCheck.limit}). Resets at midnight.`,
+    );
   }
 
   const queuedMessage = await prisma.message.create({
