@@ -68,6 +68,12 @@ export default async function WorkspacePage({
             >
               View bookings
             </Link>
+            <Link
+              href={`/app/${workspace.slug}/analytics`}
+              className="inline-flex rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+            >
+              Analytics
+            </Link>
           </div>
         </div>
       </section>
