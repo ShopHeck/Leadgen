@@ -1,0 +1,18 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "apps/web/.next",
+  "rootDirectory": ".",
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/api/public/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, X-Api-Key, Authorization" }
+      ]
+    }
+  ]
+}

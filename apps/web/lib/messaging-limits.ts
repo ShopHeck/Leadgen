@@ -1,8 +1,9 @@
 import { MessageChannel, prisma } from "@closerflow/db";
+import { getPlanLimits, PLAN_CONFIG } from "./billing";
 
 /**
  * Daily messaging cost guardrails per workspace.
- * Prevents runaway SMS/email costs from automations or abuse.
+ * Limits are determined by the workspace's active Stripe subscription plan.
  */
 
 export type MessagingLimits = {
@@ -10,10 +11,10 @@ export type MessagingLimits = {
   dailyEmailLimit: number;
 };
 
-/** Default limits per workspace (configurable per plan in production) */
-const DEFAULT_LIMITS: MessagingLimits = {
-  dailySmsLimit: 200,
-  dailyEmailLimit: 500,
+/** Fallback limits when no subscription exists (free/trial) */
+const FREE_TIER_LIMITS: MessagingLimits = {
+  dailySmsLimit: 50,
+  dailyEmailLimit: 100,
 };
 
 export type LimitCheckResult = {
@@ -57,14 +58,20 @@ export async function checkMessagingLimit(
 }
 
 /**
- * Get workspace messaging limits.
- * In production, this would be tied to the billing plan.
+ * Get workspace messaging limits based on their active billing plan.
+ * Falls back to free-tier limits if no subscription exists.
  */
 export async function getWorkspaceLimits(workspaceId: string): Promise<MessagingLimits> {
-  // TODO: Look up plan-specific limits from billing system
-  // For now, return defaults for all workspaces
-  void workspaceId;
-  return DEFAULT_LIMITS;
+  try {
+    const planConfig = await getPlanLimits(workspaceId);
+    return {
+      dailySmsLimit: planConfig.smsLimit,
+      dailyEmailLimit: planConfig.emailLimit,
+    };
+  } catch {
+    // If billing lookup fails (e.g., no subscription), use free-tier limits
+    return FREE_TIER_LIMITS;
+  }
 }
 
 /**

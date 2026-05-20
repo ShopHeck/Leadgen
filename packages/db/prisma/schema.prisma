@@ -75,6 +75,7 @@ model Workspace {
   messages       Message[]
   appointments   Appointment[]
   apiKeys        ApiKey[]
+  subscription   Subscription?
 }
 
 model WorkspaceMember {
@@ -442,4 +443,37 @@ model ApiKey {
 
   @@index([workspaceId])
   @@index([keyHash])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  workspaceId          String             @unique
+  stripeCustomerId     String             @unique
+  stripeSubscriptionId String             @unique
+  stripePriceId        String
+  plan                 PlanTier           @default(STARTER)
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+}
+
+enum PlanTier {
+  STARTER
+  GROWTH
+  SCALE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
 }
