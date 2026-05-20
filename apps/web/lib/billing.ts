@@ -274,7 +274,7 @@ export async function handleSubscriptionUpdated(subscription: Stripe.Subscriptio
   const newPriceId = subscription.items.data[0]?.price?.id;
   const newPlan = newPriceId ? planFromPriceId(newPriceId) : null;
 
-  const statusMap: Record<string, string> = {
+  const statusMap: Record<string, "ACTIVE" | "PAST_DUE" | "CANCELED" | "TRIALING"> = {
     active: "ACTIVE",
     past_due: "PAST_DUE",
     canceled: "CANCELED",
@@ -284,10 +284,12 @@ export async function handleSubscriptionUpdated(subscription: Stripe.Subscriptio
     unpaid: "PAST_DUE",
   };
 
+  const mappedStatus = statusMap[subscription.status] || "ACTIVE";
+
   await prisma.subscription.updateMany({
     where: { stripeSubscriptionId: subscription.id },
     data: {
-      status: statusMap[subscription.status] || "ACTIVE",
+      status: mappedStatus,
       plan: newPlan || undefined,
       stripePriceId: newPriceId || undefined,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
