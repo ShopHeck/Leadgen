@@ -13,7 +13,7 @@ import {
 function getStripeInstance(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY is not configured.");
-  return new Stripe(key, { apiVersion: "2024-12-18.acacia" });
+  return new Stripe(key);
 }
 
 export async function POST(request: NextRequest) {
