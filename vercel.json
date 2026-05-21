@@ -3,7 +3,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
-  "rootDirectory": ".",
   "regions": ["iad1"],
   "headers": [
     {
