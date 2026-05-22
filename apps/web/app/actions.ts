@@ -3,6 +3,7 @@
 import { Prisma, prisma } from "@closerflow/db";
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { signIn, signOut } from "../auth";
@@ -73,6 +74,10 @@ export async function signInAction(_: AuthActionState, formData: FormData): Prom
       redirectTo: callbackUrl || "/app",
     });
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
     if (error instanceof AuthError) {
       return { error: "Invalid email or password." };
     }
