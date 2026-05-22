@@ -12,6 +12,7 @@
     "@closerflow/db": "0.1.0",
     "@closerflow/types": "0.1.0",
     "@closerflow/ui": "0.1.0",
+    "@upstash/qstash": "^2.7.0",
     "bcryptjs": "^2.4.3",
     "next": "^15.2.0",
     "next-auth": "^5.0.0-beta.25",

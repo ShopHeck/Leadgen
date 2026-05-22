@@ -1,6 +1,7 @@
 import { AutomationRunStatus, MessageChannel, prisma } from "@closerflow/db";
 import { moveLeadToStageByName } from "./crm";
 import { sendLeadMessage } from "./messaging";
+import { scheduleAutomationRetry } from "./queue";
 
 export const AUTOMATION_EVENTS = ["lead.created", "lead.scored", "booking.created", "message.sent"] as const;
 export type AutomationEventType = (typeof AUTOMATION_EVENTS)[number];
@@ -266,6 +267,11 @@ export async function processAutomationRun(runId: string) {
         completedAt: canRetry ? null : new Date(),
       },
     });
+
+    // Schedule retry via QStash for near-instant processing (falls back to daily cron if unavailable)
+    if (canRetry) {
+      await scheduleAutomationRetry(run.id, retryDelayMinutes * 60);
+    }
   }
 }
 
