@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <Link href="/app" className="text-lg font-semibold tracking-tight">
             CloserFlow AI
           </Link>
-          <p className="mt-3 text-sm text-slate-400">Auth, workspaces, and public lead capture are now active.</p>
+          <p className="mt-3 text-sm text-slate-400">Manage leads, automations, and analytics across your workspaces.</p>
           <nav className="mt-8 space-y-3 text-sm text-slate-300">
             <Link href="/app" className="block rounded-xl px-3 py-2 transition hover:bg-white/10">
               Workspaces

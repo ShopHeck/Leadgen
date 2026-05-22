@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { MobileNav } from "../components/mobile-nav";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen overflow-hidden">
       {/* Navigation */}
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+      <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-pine text-white text-sm font-bold">
             CF
@@ -22,10 +23,11 @@ export default function HomePage() {
           </Link>
           <Link
             href="/signup"
-            className="rounded-full bg-pine px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#163d32]"
+            className="hidden rounded-full bg-pine px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#163d32] sm:block"
           >
             Start free trial
           </Link>
+          <MobileNav />
         </div>
       </nav>
 
@@ -346,9 +348,9 @@ export default function HomePage() {
             &copy; {new Date().getFullYear()} CloserFlow. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-slate-500">
-            <a href="#" className="hover:text-ink">Privacy</a>
-            <a href="#" className="hover:text-ink">Terms</a>
-            <a href="#" className="hover:text-ink">Contact</a>
+            <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink">Terms</Link>
+            <a href="mailto:hello@closer-flow.com" className="hover:text-ink">Contact</a>
           </div>
         </div>
       </footer>
