@@ -4,6 +4,7 @@ import { LeadAiScorePanel } from "../../../../../components/lead-ai-score-panel"
 import { LeadBookingForm } from "../../../../../components/lead-booking-form";
 import { LeadMessageForm } from "../../../../../components/lead-message-form";
 import { LeadNoteForm } from "../../../../../components/lead-note-form";
+import { LeadRevenueForm } from "../../../../../components/lead-revenue-form";
 import { requireWorkspaceMembership } from "../../../../../lib/auth-guards";
 
 type ActivityItem = {
@@ -82,6 +83,11 @@ export default async function LeadDetailPage({
       appointments: {
         orderBy: {
           startAt: "asc",
+        },
+      },
+      revenueEvents: {
+        orderBy: {
+          createdAt: "desc",
         },
       },
     },
@@ -206,6 +212,19 @@ export default async function LeadDetailPage({
 
         <div className="space-y-6">
           <LeadAiScorePanel workspaceSlug={workspaceSlug} leadId={lead.id} />
+
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <LeadRevenueForm
+              workspaceSlug={workspaceSlug}
+              leadId={lead.id}
+              initialEvents={lead.revenueEvents.map((ev) => ({
+                id: ev.id,
+                amount: String(ev.amount),
+                status: ev.status,
+                createdAt: ev.createdAt.toISOString(),
+              }))}
+            />
+          </div>
 
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
             <div className="flex items-center justify-between">

@@ -19,12 +19,12 @@ export function AuthPanel({
           <p className="text-xs uppercase tracking-[0.3em] text-emerald-100/80">CloserFlow AI</p>
           <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight">Qualify and convert leads before your team opens the CRM.</h1>
           <p className="mt-5 max-w-xl text-base leading-8 text-slate-300">
-            Task 2 introduces authentication, workspaces, and role-based access. Task 3 adds the public lead capture endpoint the funnel layer will post into.
+            AI-powered lead capture, scoring, and instant follow-up. Respond to leads in under 60 seconds, book more appointments, and track every dollar back to its source.
           </p>
           <div className="mt-8 grid gap-3 text-sm text-slate-300">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">JWT-backed Auth.js session</div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">Workspace membership and admin-only settings</div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">Public lead submission with stored UTM data</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">AI instant follow-up via SMS &amp; email</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">CRM pipeline with drag-and-drop stages</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">Full attribution &amp; revenue analytics</div>
           </div>
         </section>
 
@@ -35,15 +35,11 @@ export function AuthPanel({
           </div>
           <div className="mt-8">{children}</div>
           <div className="mt-6 border-t border-slate-200 pt-5 text-sm text-slate-600">{footer}</div>
-          <p className="mt-6 text-xs text-slate-400">
-            Public endpoint: <code>/api/public/form-submit</code>
-          </p>
-          <Link href="/" className="mt-4 inline-block text-sm font-medium text-slate-950 underline decoration-slate-300 underline-offset-4">
-            Back to marketing site
+          <Link href="/" className="mt-6 inline-block text-sm font-medium text-slate-950 underline decoration-slate-300 underline-offset-4">
+            Back to home
           </Link>
         </section>
       </div>
     </main>
   );
 }
-

@@ -1,5 +1,6 @@
 import { prisma } from "@closerflow/db";
 import { requireWorkspaceRole } from "../../../../lib/auth-guards";
+import { EmbedCodeGenerator } from "../../../../components/embed-code-generator";
 
 export default async function WorkspaceSettingsPage({
   params,
@@ -64,6 +65,11 @@ export default async function WorkspaceSettingsPage({
         </p>
         <pre className="mt-5 overflow-x-auto rounded-2xl bg-slate-950 p-4 text-xs leading-6 text-slate-300">{`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/calendly?workspaceSlug=${membership.workspace.slug}`}</pre>
       </div>
+
+      <EmbedCodeGenerator
+        workspaceSlug={membership.workspace.slug}
+        appUrl={process.env.NEXT_PUBLIC_APP_URL || "https://closer-flow.com"}
+      />
     </div>
   );
 }
