@@ -202,3 +202,104 @@ export async function sendLeadMessage({
     throw error;
   }
 }
+
+
+/**
+ * Send a queued message by its ID.
+ * Looks up the message, determines channel, and dispatches.
+ */
+export async function sendMessageById(messageId: string): Promise<SendLeadMessageResult> {
+  const message = await prisma.message.findUniqueOrThrow({
+    where: { id: messageId },
+    select: {
+      id: true,
+      workspaceId: true,
+      leadId: true,
+      channel: true,
+      body: true,
+      subject: true,
+      toAddress: true,
+      status: true,
+    },
+  });
+
+  if (message.status !== MessageStatus.QUEUED) {
+    return { messageId: message.id, channel: message.channel, status: message.status };
+  }
+
+  if (!message.toAddress) {
+    throw new Error("Message has no recipient address.");
+  }
+
+  try {
+    const delivery =
+      message.channel === MessageChannel.SMS
+        ? await sendSms(message.body, message.toAddress)
+        : await sendEmail(message.body, message.toAddress, message.subject || "CloserFlow AI follow-up");
+
+    const updated = await prisma.message.update({
+      where: { id: message.id },
+      data: {
+        status: MessageStatus.SENT,
+        provider: delivery.provider,
+        providerMessageId: delivery.providerMessageId,
+        fromAddress: delivery.fromAddress,
+        toAddress: delivery.toAddress,
+        metadataJson: delivery.metadataJson,
+        sentAt: new Date(),
+      },
+    });
+
+    return { messageId: updated.id, channel: updated.channel, status: updated.status };
+  } catch (error) {
+    await prisma.message.update({
+      where: { id: message.id },
+      data: {
+        status: MessageStatus.FAILED,
+        errorMessage: error instanceof Error ? error.message : "Unknown messaging error.",
+      },
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * Compose and send a message to a lead (used by bulk tasks and template-based automation).
+ * If templateId is provided, it would look up a template — for now uses a default body.
+ */
+export async function composeAndSendMessage({
+  workspaceId,
+  leadId,
+  channel,
+  templateId,
+}: {
+  workspaceId: string;
+  leadId: string;
+  channel: "SMS" | "EMAIL";
+  templateId?: string;
+}): Promise<SendLeadMessageResult> {
+  const lead = await prisma.lead.findFirst({
+    where: { id: leadId, workspaceId },
+    select: { id: true, name: true, email: true, phone: true },
+  });
+
+  if (!lead) throw new Error("Lead not found.");
+
+  // Template lookup placeholder — extend when template system is built
+  const firstName = lead.name.split(" ")[0] || lead.name;
+  const body = templateId
+    ? `Hi ${firstName}, following up on your inquiry. Let us know how we can help!`
+    : `Hi ${firstName}, we wanted to reach out and see if you had any questions. Reply anytime!`;
+
+  const mappedChannel = channel === "SMS" ? MessageChannel.SMS : MessageChannel.EMAIL;
+
+  return sendLeadMessage({
+    workspaceId,
+    leadId,
+    channel: mappedChannel,
+    body,
+    subject: channel === "EMAIL" ? "Following up on your inquiry" : null,
+    emitMessageSentEvent: true,
+  });
+}
