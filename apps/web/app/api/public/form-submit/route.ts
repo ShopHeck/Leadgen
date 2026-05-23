@@ -4,6 +4,8 @@ import { z } from "zod";
 import { emitAutomationEvent } from "../../../../lib/automations";
 import { isAiFollowUpEnabled, sendAiInstantFollowUp } from "../../../../lib/ai-followup";
 import { ensureDefaultPipelineForWorkspace, mapStageNameToLeadStatus } from "../../../../lib/crm";
+import { serverPostHog } from "../../../../lib/posthog";
+import { POSTHOG_EVENTS } from "../../../../lib/posthog-events";
 import { checkRateLimit, getClientIp, RATE_LIMITS, rateLimitResponse } from "../../../../lib/rate-limit";
 import { scoreAndPersistLead } from "../../../../lib/scoring";
 
@@ -201,6 +203,20 @@ export async function POST(request: NextRequest) {
         leadId: result.lead.id,
         source: result.lead.utmSource || result.lead.source,
       },
+    });
+
+    // Track lead creation in PostHog
+    serverPostHog.capture({
+      distinctId: result.lead.id,
+      event: POSTHOG_EVENTS.LEAD_CREATED,
+      properties: {
+        workspaceId: workspace.id,
+        source: result.lead.utmSource || result.lead.source || "direct",
+        campaign: result.lead.utmCampaign || result.lead.campaign || null,
+        hasEmail: !!result.lead.email,
+        hasPhone: !!result.lead.phone,
+      },
+      groups: { workspace: workspace.id },
     });
 
     // AI Instant Follow-Up: send personalized message within seconds of capture
