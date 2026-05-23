@@ -1,6 +1,5 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { PostHogProvider } from "../lib/posthog-client";
 
 export const metadata: Metadata = {
   title: "CloserFlow AI — Turn Every Lead Into a Booked Appointment",
@@ -29,9 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="antialiased">
-        <PostHogProvider>{children}</PostHogProvider>
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

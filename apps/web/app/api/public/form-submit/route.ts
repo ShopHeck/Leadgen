@@ -6,9 +6,6 @@ import { isAiFollowUpEnabled, sendAiInstantFollowUp } from "../../../../lib/ai-f
 import { ensureDefaultPipelineForWorkspace, mapStageNameToLeadStatus } from "../../../../lib/crm";
 import { checkRateLimit, getClientIp, RATE_LIMITS, rateLimitResponse } from "../../../../lib/rate-limit";
 import { scoreAndPersistLead } from "../../../../lib/scoring";
-import { trackServerEvent } from "../../../../lib/posthog";
-import { EVENTS } from "../../../../lib/posthog-events";
-import { indexLead, isChromaEnabled } from "../../../../lib/chroma";
 
 const publicLeadSchema = z.object({
   workspaceSlug: z.string().min(1),
@@ -206,48 +203,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // PostHog: Track lead creation and form submission events server-side
-    trackServerEvent(result.lead.id, EVENTS.LEAD_CREATED, {
-      workspace_id: workspace.id,
-      source: result.lead.utmSource || result.lead.source,
-      campaign: result.lead.utmCampaign || result.lead.campaign,
-      utm_medium: result.lead.utmMedium,
-      has_email: !!result.lead.email,
-      has_phone: !!result.lead.phone,
-      funnel_slug: input.funnelSlug || null,
-    });
-
-    trackServerEvent(result.lead.id, EVENTS.FORM_SUBMISSION, {
-      workspace_id: workspace.id,
-      funnel_id: funnel?.id || null,
-      page_url: input.pageUrl || null,
-    });
-
     // AI Instant Follow-Up: send personalized message within seconds of capture
     let aiFollowUp = null;
     const followUpEnabled = await isAiFollowUpEnabled(workspace.id);
     if (followUpEnabled) {
       aiFollowUp = await sendAiInstantFollowUp(result.lead.id);
-    }
-
-    const scoring = await scoreAndPersistLead(result.lead.id);
-
-    // ChromaDB: Index lead for semantic search (non-blocking)
-    if (isChromaEnabled()) {
-      indexLead({
-        leadId: result.lead.id,
-        workspaceId: workspace.id,
-        name: result.lead.name,
-        email: result.lead.email,
-        phone: result.lead.phone,
-        source: result.lead.source,
-        campaign: result.lead.campaign,
-        score: scoring.score,
-        scoreBand: scoring.band,
-        status: result.lead.status,
-        formData: payloadJson as Record<string, unknown>,
-        notes: [],
-      }).catch((err) => console.error("[chroma] Lead indexing failed:", err));
     }
 
     return NextResponse.json(
@@ -256,7 +216,7 @@ export async function POST(request: NextRequest) {
         leadId: result.lead.id,
         submissionId: result.submission.id,
         workspaceId: workspace.id,
-        scoring,
+        scoring: await scoreAndPersistLead(result.lead.id),
         aiFollowUp: aiFollowUp
           ? { channel: aiFollowUp.channel, generatedByAi: aiFollowUp.generatedByAi }
           : null,
