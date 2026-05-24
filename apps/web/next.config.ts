@@ -1,8 +1,11 @@
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadEnvConfig } from "@next/env";
-import { PrismaPlugin } from "@prisma/nextjs-monorepo-workaround-plugin";
+
+const require = createRequire(import.meta.url);
+const { PrismaPlugin } = require("@prisma/nextjs-monorepo-workaround-plugin");
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
