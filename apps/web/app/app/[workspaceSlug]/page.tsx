@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@closerflow/db";
 import { requireWorkspaceMembership } from "../../../lib/auth-guards";
+import { OnboardingGuide } from "../../../components/onboarding-guide";
 
 export default async function WorkspacePage({
   params,
@@ -34,6 +35,28 @@ export default async function WorkspacePage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="dashboard"
+        title="Getting Started"
+        steps={[
+          {
+            title: "Welcome to your workspace dashboard",
+            description: "This is your command center. Here you can see an overview of your workspace activity including lead counts, messages sent, team members, and active automations at a glance.",
+          },
+          {
+            title: "Navigate to key features",
+            description: "Use the buttons at the top to jump into specific areas: the CRM board to manage your pipeline, Automations to set up workflows, Messages for communication logs, Bookings for appointments, and Analytics for performance data.",
+          },
+          {
+            title: "Recent leads feed",
+            description: "The bottom section shows your most recently captured leads with their status and campaign source. Click on any lead to see their full profile, send messages, book appointments, or add notes.",
+          },
+          {
+            title: "Capture leads via API",
+            description: "The 'Public capture example' card shows how to send leads into your workspace programmatically. Use the form-submit API endpoint from your landing pages, ads, or any external source. Go to Settings to get your embed code.",
+          },
+        ]}
+      />
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>

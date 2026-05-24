@@ -1,5 +1,6 @@
 import { requireWorkspaceMembership } from "../../../../lib/auth-guards";
 import { getWorkspaceAnalytics } from "../../../../lib/analytics";
+import { OnboardingGuide } from "../../../../components/onboarding-guide";
 import Link from "next/link";
 
 function formatCurrency(amount: number) {
@@ -38,6 +39,32 @@ export default async function AnalyticsPage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="analytics"
+        title="Analytics Guide"
+        steps={[
+          {
+            title: "Your attribution dashboard",
+            description: "This page gives you a complete view of your lead generation performance. Track where your leads come from, how they convert through the pipeline, and which campaigns drive the most revenue.",
+          },
+          {
+            title: "Key metrics at a glance",
+            description: "The KPI cards at the top show total leads, booking rate, revenue, cost per lead, average response time, and conversion rate. These update in real-time as new data flows in.",
+          },
+          {
+            title: "Source attribution",
+            description: "The source attribution table breaks down performance by traffic source (Facebook, Google, referral, etc.) so you know exactly which channels are delivering ROI.",
+          },
+          {
+            title: "Pipeline conversion funnel",
+            description: "See how leads flow through each stage of your pipeline with drop-off rates at each step. This helps identify bottlenecks where leads get stuck or lost.",
+          },
+          {
+            title: "Date range filtering",
+            description: "Use the date range controls to analyze specific time periods. Compare week-over-week or month-over-month performance to spot trends in your lead generation efforts.",
+          },
+        ]}
+      />
       {/* Header */}
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

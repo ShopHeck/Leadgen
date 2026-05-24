@@ -1,4 +1,5 @@
 import { prisma } from "@closerflow/db";
+import { OnboardingGuide } from "../../../../components/onboarding-guide";
 import { requireWorkspaceRole } from "../../../../lib/auth-guards";
 import { EmbedCodeGenerator } from "../../../../components/embed-code-generator";
 
@@ -36,6 +37,28 @@ export default async function WorkspaceSettingsPage({
 
   return (
     <div className="space-y-6">
+      <OnboardingGuide
+        pageKey="settings"
+        title="Settings Guide"
+        steps={[
+          {
+            title: "Workspace configuration",
+            description: "This is where you manage your workspace team, integrations, and lead capture setup. Only workspace admins have access to this page.",
+          },
+          {
+            title: "Team members & roles",
+            description: "The member roster shows everyone in your workspace with their role (Admin or Member). Admins can access all features including Settings, Automations, and Billing. Members can view leads and the CRM board.",
+          },
+          {
+            title: "Calendly webhook setup",
+            description: "Copy the webhook URL shown below and paste it into your Calendly webhook settings. This connects your scheduling link to CloserFlow so bookings automatically create appointments linked to the right lead.",
+          },
+          {
+            title: "Embed code for lead capture",
+            description: "Use the embed code generator to create a lead capture form you can place on any website. The form submits directly to your workspace API and creates new leads automatically with UTM tracking.",
+          },
+        ]}
+      />
       <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Admin settings</p>
         <h2 className="mt-2 text-3xl font-semibold">{membership.workspace.name}</h2>

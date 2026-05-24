@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@closerflow/db";
+import { OnboardingGuide } from "../../../../components/onboarding-guide";
 import { requireWorkspaceMembership } from "../../../../lib/auth-guards";
 
 function formatDate(value: Date) {
@@ -39,6 +40,28 @@ export default async function WorkspaceBookingsPage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="bookings"
+        title="Bookings Guide"
+        steps={[
+          {
+            title: "Appointment management",
+            description: "This page shows all scheduled appointments across your workspace. Bookings can be created manually from a lead's profile or automatically via Calendly webhook integration.",
+          },
+          {
+            title: "Calendly integration",
+            description: "Connect Calendly by adding your workspace webhook URL in Settings. When someone books through your Calendly link, the appointment automatically appears here and is linked to the correct lead.",
+          },
+          {
+            title: "Lead lifecycle advancement",
+            description: "When a booking is created, the associated lead is automatically advanced through your pipeline stages — moving them to 'Booked' status. This keeps your CRM board up to date without manual work.",
+          },
+          {
+            title: "Booking from lead profiles",
+            description: "You can also create manual bookings directly from any lead's detail page. Use this for phone-booked appointments or walk-ins that didn't come through Calendly.",
+          },
+        ]}
+      />
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>

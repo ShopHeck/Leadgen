@@ -1,6 +1,7 @@
 import { prisma } from "@closerflow/db";
 import Link from "next/link";
 import { CrmBoard } from "../../../../components/crm-board";
+import { OnboardingGuide } from "../../../../components/onboarding-guide";
 import { requireWorkspaceMembership } from "../../../../lib/auth-guards";
 import { ensureDefaultPipelineForWorkspace } from "../../../../lib/crm";
 
@@ -41,6 +42,28 @@ export default async function CrmPage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="crm"
+        title="CRM Pipeline Guide"
+        steps={[
+          {
+            title: "Your lead lifecycle board",
+            description: "This is your visual sales pipeline. Leads are organized into stages (columns) representing where they are in your sales process — from new leads all the way to won or lost.",
+          },
+          {
+            title: "Drag leads between stages",
+            description: "Simply drag and drop a lead card from one column to another to update their status. Every move is saved instantly and recorded in the lead's stage history for full audit trail.",
+          },
+          {
+            title: "Click a lead for full details",
+            description: "Click on any lead card to open their profile where you can send messages, book appointments, add notes, log revenue, and see AI scoring — all in one place.",
+          },
+          {
+            title: "Stages are customizable",
+            description: "The default pipeline includes common stages like New, Contacted, Booked, Won, and Lost. Leads flow through these stages as you work them through your sales process.",
+          },
+        ]}
+      />
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>

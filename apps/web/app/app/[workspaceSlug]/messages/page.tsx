@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MessageChannel, MessageStatus, prisma } from "@closerflow/db";
+import { OnboardingGuide } from "../../../../components/onboarding-guide";
 import { requireWorkspaceMembership } from "../../../../lib/auth-guards";
 
 function formatDate(value: Date) {
@@ -46,6 +47,28 @@ export default async function WorkspaceMessagesPage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="messages"
+        title="Messages Guide"
+        steps={[
+          {
+            title: "Your communication hub",
+            description: "This page shows all outbound SMS and email messages sent from your workspace. Every message is linked to a specific lead so you have full context on who received what.",
+          },
+          {
+            title: "Channel breakdown",
+            description: "The stats at the top show your total messages broken down by channel (SMS vs Email) and delivery status. Use this to monitor failed deliveries that may need attention.",
+          },
+          {
+            title: "Sending messages",
+            description: "Messages are sent from individual lead profiles. Go to any lead's detail page and use the messaging form to send SMS or email. Messages sent via automations also appear here.",
+          },
+          {
+            title: "Delivery tracking",
+            description: "Each message shows its delivery status (Queued, Sent, Delivered, or Failed). Failed messages include error details so you can troubleshoot delivery issues.",
+          },
+        ]}
+      />
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>

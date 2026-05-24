@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@closerflow/db";
 import { createAutomationAction, processAutomationRunsAction } from "../../../../app/actions";
+import { OnboardingGuide } from "../../../../components/onboarding-guide";
 import { requireWorkspaceRole } from "../../../../lib/auth-guards";
 
 function formatDate(value: Date | null) {
@@ -63,6 +64,32 @@ export default async function WorkspaceAutomationsPage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="automations"
+        title="Automations Guide"
+        steps={[
+          {
+            title: "Event-based workflow engine",
+            description: "Automations let you trigger actions automatically when specific events happen — like a new lead arriving, a booking being created, or a lead score changing. No manual work required.",
+          },
+          {
+            title: "Creating an automation",
+            description: "Use the form below to create automations. Choose a trigger type (e.g., 'lead_created'), set conditions to filter which leads qualify, then define actions like sending an SMS, email, or moving the lead to a new pipeline stage.",
+          },
+          {
+            title: "Conditions and actions (JSON)",
+            description: "Conditions filter which events trigger the automation (e.g., only leads from Facebook). Actions define what happens — send a message, add a note, or change the pipeline stage. Both use JSON format for maximum flexibility.",
+          },
+          {
+            title: "Retry handling",
+            description: "If an automation run fails (e.g., SMS delivery error), it's automatically scheduled for retry. Use the 'Process retries' button to manually trigger retries, or they'll run automatically via the daily cron job.",
+          },
+          {
+            title: "Run history",
+            description: "The bottom section shows recent automation runs with their status (Pending, Running, Succeeded, Failed). Failed runs show error details to help you troubleshoot.",
+          },
+        ]}
+      />
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>

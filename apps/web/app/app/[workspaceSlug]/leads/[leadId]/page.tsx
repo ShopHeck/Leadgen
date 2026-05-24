@@ -5,6 +5,7 @@ import { LeadBookingForm } from "../../../../../components/lead-booking-form";
 import { LeadMessageForm } from "../../../../../components/lead-message-form";
 import { LeadNoteForm } from "../../../../../components/lead-note-form";
 import { LeadRevenueForm } from "../../../../../components/lead-revenue-form";
+import { OnboardingGuide } from "../../../../../components/onboarding-guide";
 import { requireWorkspaceMembership } from "../../../../../lib/auth-guards";
 
 type ActivityItem = {
@@ -138,6 +139,28 @@ export default async function LeadDetailPage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="lead-detail"
+        title="Lead Profile Guide"
+        steps={[
+          {
+            title: "Complete lead profile",
+            description: "This is a single lead's full profile. You can see their contact info, pipeline stage, score, UTM tracking data, and all historical activity in one place.",
+          },
+          {
+            title: "AI lead scoring",
+            description: "The AI Score panel analyzes the lead's engagement signals and assigns a score band (Hot, Warm, or Nurture). Use this to prioritize which leads to focus on first.",
+          },
+          {
+            title: "Take action on leads",
+            description: "From here you can send SMS/email messages, book appointments, log revenue events, and add internal notes. All actions are recorded in the activity timeline below.",
+          },
+          {
+            title: "Activity timeline",
+            description: "The activity feed at the bottom shows every interaction with this lead in chronological order — messages sent, bookings made, notes added, and stage changes. Full audit trail.",
+          },
+        ]}
+      />
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
