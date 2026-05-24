@@ -1,5 +1,4 @@
 import { Client } from "@upstash/qstash";
-import { enqueueAutomationRun, isGCPTasksEnabled } from "./gcp-tasks";
 
 /**
  * QStash client for scheduling delayed automation retries.
@@ -7,8 +6,6 @@ import { enqueueAutomationRun, isGCPTasksEnabled } from "./gcp-tasks";
  * Instead of relying on a frequent cron job, we schedule individual
  * retry messages with specific delays when an automation run fails.
  * QStash calls our endpoint at the specified time — free for 500 msgs/day.
- *
- * If QStash is not configured, falls back to GCP Cloud Tasks when available.
  *
  * Setup:
  * 1. Create account at https://console.upstash.com
@@ -29,8 +26,7 @@ function getQStashClient(): Client | null {
 
 /**
  * Schedule an automation retry after a delay.
- * If QStash is not configured, falls back to GCP Cloud Tasks, then silently
- * (retry will be picked up by daily cron).
+ * If QStash is not configured, falls back silently (retry will be picked up by daily cron).
  *
  * @param runId - The automation run ID to retry
  * @param delaySeconds - How many seconds to wait before retrying
@@ -39,41 +35,29 @@ export async function scheduleAutomationRetry(
   runId: string,
   delaySeconds: number,
 ): Promise<boolean> {
-  // Try QStash first
   const client = getQStashClient();
-  if (client) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL;
-    if (!appUrl) return false;
+  if (!client) return false;
 
-    const baseUrl = appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL;
+  if (!appUrl) return false;
 
-    try {
-      await client.publishJSON({
-        url: `${baseUrl}/api/cron/process-automations`,
-        body: { runId },
-        delay: delaySeconds,
-        headers: {
-          Authorization: `Bearer ${process.env.CRON_SECRET || ""}`,
-        },
-      });
+  const baseUrl = appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
 
-      return true;
-    } catch (error) {
-      console.error("[qstash] Failed to schedule retry:", error);
-    }
+  try {
+    await client.publishJSON({
+      url: `${baseUrl}/api/cron/process-automations`,
+      body: { runId },
+      delay: delaySeconds,
+      headers: {
+        Authorization: `Bearer ${process.env.CRON_SECRET || ""}`,
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error("[qstash] Failed to schedule retry:", error);
+    return false;
   }
-
-  // Fallback: try GCP Cloud Tasks
-  if (isGCPTasksEnabled()) {
-    try {
-      const taskName = await enqueueAutomationRun(runId, { delaySeconds });
-      return !!taskName;
-    } catch (error) {
-      console.error("[gcp-tasks] Failed to schedule retry:", error);
-    }
-  }
-
-  return false;
 }
 
 /**
