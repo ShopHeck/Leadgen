@@ -15,6 +15,9 @@ loadEnvConfig(path.join(currentDir, "../.."));
 const nextConfig = {
   transpilePackages: ["@closerflow/db", "@closerflow/types", "@closerflow/ui"],
   serverExternalPackages: ["twilio", "stripe"],
+  outputFileTracingIncludes: {
+    "/**": ["../../packages/db/src/generated/client/**"],
+  },
   ...(isGitHubPagesBuild
     ? {
         basePath: repoBasePath,
