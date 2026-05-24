@@ -6,6 +6,7 @@
   "types": "src/index.ts",
   "scripts": {
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema prisma/schema.prisma --accept-data-loss",
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
