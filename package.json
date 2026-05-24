@@ -13,6 +13,7 @@
     "lint": "npm run lint --workspace @closerflow/web",
     "typecheck": "npm run typecheck --workspace @closerflow/web && npm run typecheck --workspace @closerflow/db && npm run typecheck --workspace @closerflow/types && npm run typecheck --workspace @closerflow/ui",
     "db:generate": "npm run prisma:generate --workspace @closerflow/db",
+    "db:push": "npm run prisma:push --workspace @closerflow/db",
     "db:migrate": "npm run prisma:migrate --workspace @closerflow/db",
     "postinstall": "npm run db:generate"
   },
