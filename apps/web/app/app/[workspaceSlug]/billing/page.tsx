@@ -1,4 +1,5 @@
 import { prisma } from "@closerflow/db";
+import { OnboardingGuide } from "../../../../components/onboarding-guide";
 import { requireWorkspaceRole } from "../../../../lib/auth-guards";
 import { getWorkspaceSubscription, PLAN_CONFIG, PlanTier } from "../../../../lib/billing";
 import { BillingActions } from "../../../../components/billing-actions";
@@ -25,6 +26,24 @@ export default async function BillingPage({
 
   return (
     <div className="space-y-8">
+      <OnboardingGuide
+        pageKey="billing"
+        title="Billing Guide"
+        steps={[
+          {
+            title: "Manage your subscription",
+            description: "This page shows your current plan, usage limits, and billing status. Only workspace admins can access billing settings and make subscription changes.",
+          },
+          {
+            title: "Plan tiers",
+            description: "Choose from Starter, Growth, or Scale plans depending on your needs. Each tier includes different limits for leads, messages, automations, and team members. Upgrade or downgrade anytime.",
+          },
+          {
+            title: "Stripe-powered billing",
+            description: "Payments are processed securely through Stripe. Use the 'Manage subscription' button to access the Stripe customer portal where you can update payment methods, view invoices, and cancel if needed.",
+          },
+        ]}
+      />
       {/* Header */}
       <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
