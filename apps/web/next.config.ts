@@ -13,8 +13,8 @@ const repoBasePath = process.env.GITHUB_PAGES_BASE_PATH || defaultPagesBasePath;
 loadEnvConfig(path.join(currentDir, "../.."));
 
 const nextConfig = {
-  transpilePackages: ["@closerflow/db", "@closerflow/types", "@closerflow/ui"],
-  serverExternalPackages: ["twilio", "stripe"],
+  transpilePackages: ["@closerflow/types", "@closerflow/ui"],
+  serverExternalPackages: ["twilio", "stripe", "@closerflow/db", "@prisma/client", ".prisma/client"],
   outputFileTracingIncludes: {
     "/**": ["../../packages/db/src/generated/client/**"],
   },
